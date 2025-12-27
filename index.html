@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Min SQLite ChatApp</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        
+        /* Login Skærm */
+        #login-screen { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+        input[type="email"], input[type="password"], select, input[type="text"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #218838; }
+        #error-msg { color: #dc3545; font-size: 14px; margin-top: 10px; }
+
+        /* Chat Container */
+        #chat-container { display: none; background: white; width: 90%; max-width: 600px; height: 80vh; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex-direction: column; overflow: hidden; }
+        #chat-header { background: #007bff; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        #messages { list-style-type: none; margin: 0; padding: 20px; flex-grow: 1; overflow-y: auto; border-bottom: 1px solid #eee; }
+        #messages li { padding: 8px 12px; margin-bottom: 10px; border-radius: 4px; background: #f1f1f1; max-width: 80%; word-wrap: break-word; }
+        #messages .my-msg { background: #d1ecf1; align-self: flex-end; margin-left: auto; }  
+        #messages .system-msg { background: transparent; color: #888; font-style: italic; text-align: center; width: 100%; }
+        /* for system-msg class indenfor messages-div */
+		
+        #form { display: flex; padding: 15px; background: #fff; }
+        #input { flex-grow: 1; border: 1px solid #ddd; border-radius: 4px; padding: 10px; outline: none; }
+        #send-btn { width: auto; margin-left: 10px; background-color: #007bff; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <h2>Velkommen</h2>
+        <input type="email" id="email-input" placeholder="E-mail" required>
+        <input type="password" id="password-input" placeholder="Adgangskode" required>
+        
+        <div style="text-align: left; font-size: 14px; margin: 10px 0;">
+            <input type="checkbox" id="new-user-check"> Jeg er ny bruger
+        </div>
+        
+        <button id="login-btn">Log ind / Opret</button>
+        <p id="error-msg"></p>
+    </div>
+
+    <div id="chat-container">
+        <div id="chat-header">
+            <span id="display-user">Chat</span>
+            <select id="room-select" style="width: auto; margin: 0;">
+                <option value="Generelt">🏠 Generelt</option>
+                <option value="Sport">⚽ Sport</option>
+                <option value="Kodning">💻 Kodning</option>
+            </select>
+        </div>
+
+        <ul id="messages"></ul>
+
+        <form id="form">
+            <input id="input" autocomplete="off" placeholder="Skriv en besked..." />
+            <button id="send-btn" type="submit">Send</button>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // DOM Elementer
+        const loginScreen = document.getElementById('login-screen');
+        const chatContainer = document.getElementById('chat-container');
+        const loginBtn = document.getElementById('login-btn');
+        const emailInput = document.getElementById('email-input');
+        const passInput = document.getElementById('password-input');
+        const newUserCheck = document.getElementById('new-user-check');
+        const errorMsg = document.getElementById('error-msg');
+        
+        const roomSelect = document.getElementById('room-select');
+        const messages = document.getElementById('messages');
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const displayUser = document.getElementById('display-user');
+
+        let currentUserEmail = "";
+
+        // --- AUTHENTICATION ---
+        loginBtn.addEventListener('click', () => {
+            const data = {
+                email: emailInput.value,
+                password: passInput.value,
+                isNewUser: newUserCheck.checked
+            };
+			//alert(data);
+            socket.emit('authenticate', data);
+        });
+
+        socket.on('auth response', (res) => {
+            if (res.success) {
+                currentUserEmail = res.email;
+                displayUser.textContent = `Logget ind som: ${res.email}`;
+                loginScreen.style.display = 'none';
+                chatContainer.style.display = 'flex';
+                // Join standard rum efter login
+                socket.emit('join room', roomSelect.value);
+            } else {
+                errorMsg.textContent = res.message;
+            }
+        });
+
+        // --- RUM LOGIK ---
+        roomSelect.addEventListener('change', () => {
+			
+            socket.emit('join room', roomSelect.value);
+        });
+
+        // --- MODTAG DATA ---
+        socket.on('chat history', (rows) => {
+            messages.innerHTML = ''; // Rens skærmen før historikken tegnes
+			addMessageToUI(`--- Velkommen til ${roomSelect.value} ---`, 'system-msg');
+     
+            rows.forEach(row => {
+                addMessageToUI(`[${row.timestamp}] ${row.message}`);
+            });
+        });
+
+        socket.on('chat message', (msg) => {
+            addMessageToUI(msg,'my-msg');
+			//addMessageToUI(msg);
+        });
+
+        // --- SEND BESKED ---
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value) {
+                // Vi sender rum, besked og brugerens email til serveren
+                socket.emit('chat message', {
+                    room: roomSelect.value,
+                    msg: `${currentUserEmail}: ${input.value}`
+                });
+                input.value = '';
+            }
+        });
+
+        // Hjælpefunktion til UI
+        function addMessageToUI(text, className = '') {
+            const item = document.createElement('li');
+            item.textContent = text;
+            if (className) item.classList.add(className);
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+</html>
