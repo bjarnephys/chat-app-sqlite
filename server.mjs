@@ -10,7 +10,10 @@ const saltRounds = 10; // Hvor kraftig skal krypteringen være? 10 er standard.
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = path.dirname(fileURLToPath(import.meta.url));// Brug porten fra systemet (Render), eller 3000 hvis vi er på localhost
+const PORT = process.env.PORT || 3000;
+// Brug porten fra systemet (Render), eller 3000 hvis vi er på localhost
+const PORT = process.env.PORT || 3000;
 //  C:\Users\bh\Documents\programmering\node.js\chat-projekt
 //  node server.mjs
 // Tilføj dette i toppen af din server.mjs
@@ -159,6 +162,7 @@ io.on('connection', (socket) => {
   });
 });
 
-httpServer.listen(3000, () => {
-  console.log('Chatserver med RUM kører på http://localhost:3000');
+
+httpServer.listen(PORT, () => {
+    console.log(`Serveren kører på port ${PORT}`);
 });

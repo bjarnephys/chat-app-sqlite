@@ -1,12 +1,15 @@
 {
   "name": "chat-projekt",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Realtids chat-app med SQLite og brugerstyring",
+  "main": "server.mjs",
+  "type": "module",
   "scripts": {
+    "start": "node server.mjs",
+    "dev": "nodemon server.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["chat", "socket.io", "sqlite3"],
   "author": "",
   "license": "ISC",
   "dependencies": {
