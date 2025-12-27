@@ -11,7 +11,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));// Brug porten fra systemet (Render), eller 3000 hvis vi er på localhost
-const PORT = process.env.PORT || 3000;
+
 // Brug porten fra systemet (Render), eller 3000 hvis vi er på localhost
 const PORT = process.env.PORT || 3000;
 //  C:\Users\bh\Documents\programmering\node.js\chat-projekt
