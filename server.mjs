@@ -49,6 +49,7 @@ db.serialize(() => {
   
   db.run(`CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+	username TEXT,
     room TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     message TEXT
@@ -97,33 +98,7 @@ io.on('connection', (socket) => {
     }
 	});
 
-  /*
-  socket.on('authenticate', (data) => {
-	  console.log('authenticate');
-    const { email, password, isNewUser } = data;
-
-    if (isNewUser) {
-      // REGISTRERING: Prøv at indsætte ny bruger
-      db.run("INSERT INTO users (email, password) VALUES (?, ?)", [email, password], function(err) {
-        if (err) {
-          return socket.emit('auth response', { success: false, message: 'Emailen findes allerede.' });
-        }
-        socket.emit('auth response', { success: true, email: email });
-      });
-    } else {
-      // LOGIN: Tjek om både email og password passer
-      db.get("SELECT * FROM users WHERE email = ? AND password = ?", [email, password], (err, row) => {
-        if (err) return console.error(err.message);
-        
-        if (row) {
-          socket.emit('auth response', { success: true, email: email });
-        } else {
-          socket.emit('auth response', { success: false, message: 'Forkert email eller password.' });
-        }
-      });
-    }
-  });
-  */
+  
 	
   console.log('Ny bruger forbundet, socket.id=',socket.id); //hver bruger har unikt id
   //Ny bruger forbundet, socket.id= rcRpY6D0PNKStgdgAAAD  unikt random tal
@@ -194,10 +169,10 @@ io.on('connection', (socket) => {
   // Modtag besked og send den KUN til det specifikke rum
   socket.on('chat message', async (data)  => {
     // data forventes nu at være et objekt: { room: 'Sport', msg: 'Hej!' }
-    const timedMsg = `[${new Date().toLocaleTimeString()}] ${data.user}: ${data.msg}`;
+    const timedMsg = `[${new Date().toLocaleTimeString()}] ${data.username}: ${data.msg}`;
     // GEM I DB: id autogenereres, tid er default CURRENT_TIMESTAMP
-    const stmt = db.prepare("INSERT INTO messages (room, message) VALUES (?, ?)");
-    stmt.run(data.room, data.msg);
+    const stmt = db.prepare("INSERT INTO messages (username, room, message) VALUES (?, ?, ?)");
+    stmt.run(data.username, data.room, data.msg);
     stmt.finalize();
 	
     // io.to(room) sender kun til brugere i det aktuelle room
@@ -205,7 +180,7 @@ io.on('connection', (socket) => {
 	
 	// Gem beskeden i Snowflake (til fremtidig analyse)
     try {
-      await saveMessageToSnowflake(data.user, data.room, data.msg);
+      await saveMessageToSnowflake(data.username, data.room, data.msg);
     } catch (err) {
       // Vi lader chatten køre videre, selvom Snowflake fejler
       console.log("Snowflake logning fejlede, men chatten fortsætter.");

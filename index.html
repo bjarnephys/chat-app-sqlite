@@ -162,7 +162,7 @@ body {
 			addMessageToUI(`--- Velkommen til ${roomSelect.value} ---`, 'system-msg');
      
             rows.forEach(row => {
-                addMessageToUI(`[${row.timestamp}] ${row.message}`);
+                addMessageToUI(`[${row.timestamp}] ${row.username}: ${row.message}`);
             });
         });
 
@@ -177,7 +177,7 @@ body {
             if (input.value) {
                 // Vi sender rum, besked og brugerens email til serveren
                 socket.emit('chat message', {
-					user: currentUserEmail,
+					username: currentUserEmail,
                     room: roomSelect.value,
                     //msg: `${currentUserEmail}: ${input.value}`
 					msg: `${input.value}`
