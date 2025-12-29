@@ -5,12 +5,26 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import sqlite3 from 'sqlite3';
 import bcrypt from 'bcrypt';
+import { connection, connectToSnowflake } from './snowflake-config.js';
 const saltRounds = 10; // Hvor kraftig skal krypteringen være? 10 er standard.
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));// Brug porten fra systemet (Render), eller 3000 hvis vi er på localhost
+
+async function MakeSnowflakeConnection() {
+    try {
+        console.log("Forbinder til Snowflake...");
+        await connection.connectAsync(); // DETTE MANGLER SIKKERT
+        console.log("❄️ Snowflake er klar!");
+
+    
+    } catch (err) {
+        console.error("Kunne ikke starte app'en pga. Snowflake:", err);
+    }
+}
+MakeSnowflakeConnection();
 
 // Brug porten fra systemet (Render), eller 3000 hvis vi er på localhost
 const PORT = process.env.PORT || 3000;
@@ -148,10 +162,39 @@ io.on('connection', (socket) => {
     socket.emit('chat message', `Du er nu i rummet: ${room}`); 
   });
 
+
+	async function saveMessageToSnowflake(username, room, message) {
+		if (!connection.isUp()) {
+		console.log("Snowflake forbindelse ikke aktiv. Forsøger at forbinde...");
+		await connection.connectAsync();
+		}
+	
+	  const sql = `
+		INSERT INTO CHAT_MESSAGES (username, room, message) 
+		VALUES (?, ?, ?)
+	  `;
+
+	  return new Promise((resolve, reject) => {
+		connection.execute({
+		  sqlText: sql,
+		  binds: [username, room, message], // "Binds" beskytter mod SQL injection
+		  complete: (err, stmt, rows) => {
+			if (err) {
+			  console.error('Fejl ved gem i Snowflake:', err.message);
+			  reject(err);
+			} else {
+			  console.log('Besked gemt i Snowflake!');
+			  resolve(rows);
+			}
+		  }
+		});
+	  });
+	}
+
   // Modtag besked og send den KUN til det specifikke rum
-  socket.on('chat message', (data) => {
+  socket.on('chat message', async (data)  => {
     // data forventes nu at være et objekt: { room: 'Sport', msg: 'Hej!' }
-    const timedMsg = `[${new Date().toLocaleTimeString()}] ${data.msg}`;
+    const timedMsg = `[${new Date().toLocaleTimeString()}] ${data.user}: ${data.msg}`;
     // GEM I DB: id autogenereres, tid er default CURRENT_TIMESTAMP
     const stmt = db.prepare("INSERT INTO messages (room, message) VALUES (?, ?)");
     stmt.run(data.room, data.msg);
@@ -159,6 +202,15 @@ io.on('connection', (socket) => {
 	
     // io.to(room) sender kun til brugere i det aktuelle room
     io.to(data.room).emit('chat message', timedMsg);
+	
+	// Gem beskeden i Snowflake (til fremtidig analyse)
+    try {
+      await saveMessageToSnowflake(data.user, data.room, data.msg);
+    } catch (err) {
+      // Vi lader chatten køre videre, selvom Snowflake fejler
+      console.log("Snowflake logning fejlede, men chatten fortsætter.");
+    }
+	
   });
 });
 

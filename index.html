@@ -4,28 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Min SQLite ChatApp</title>
+	
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        
-        /* Login Skærm */
-        #login-screen { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; text-align: center; }
-        input[type="email"], input[type="password"], select, input[type="text"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        button:hover { background-color: #218838; }
-        #error-msg { color: #dc3545; font-size: 14px; margin-top: 10px; }
+	
+   :root {
+    --primary-color: #0084ff; /* Messenger blå */
+    --bg-color: #f0f2f5;
+    --msg-mine: #0084ff;
+    --msg-theirs: #e4e6eb;
+}
 
-        /* Chat Container */
-        #chat-container { display: none; background: white; width: 90%; max-width: 600px; height: 80vh; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex-direction: column; overflow: hidden; }
-        #chat-header { background: #007bff; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        #messages { list-style-type: none; margin: 0; padding: 20px; flex-grow: 1; overflow-y: auto; border-bottom: 1px solid #eee; }
-        #messages li { padding: 8px 12px; margin-bottom: 10px; border-radius: 4px; background: #f1f1f1; max-width: 80%; word-wrap: break-word; }
-        #messages .my-msg { background: #d1ecf1; align-self: flex-end; margin-left: auto; }  
-        #messages .system-msg { background: transparent; color: #888; font-style: italic; text-align: center; width: 100%; }
-        /* for system-msg class indenfor messages-div */
+body { 
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+    background-color: var(--bg-color);
+    margin: 0; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+}
+
+#chat-container { 
+    width: 100%; 
+    max-width: 500px; 
+    height: 90vh; 
+    background: white; 
+    display: flex; 
+    flex-direction: column; 
+    box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#messages { 
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 20px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 8px; /* Luft mellem beskeder */
+}
+
+/* Chat-bobler */
+#messages li { 
+    list-style: none;
+    padding: 10px 16px; 
+    border-radius: 18px; 
+    max-width: 75%; 
+    font-size: 15px;
+    line-height: 1.4;
+    position: relative;
+}
+
+/* Beskeder fra andre */
+#messages li:not(.my-msg) { 
+    background-color: var(--msg-theirs); 
+    align-self: flex-start; 
+    color: black;
+}
+
+/* Dine egne beskeder */
+#messages .my-msg { 
+    background-color: var(--msg-mine); 
+    color: white; 
+    align-self: flex-end; 
+}
 		
-        #form { display: flex; padding: 15px; background: #fff; }
-        #input { flex-grow: 1; border: 1px solid #ddd; border-radius: 4px; padding: 10px; outline: none; }
-        #send-btn { width: auto; margin-left: 10px; background-color: #007bff; }
     </style>
 </head>
 <body>
@@ -98,7 +142,7 @@
                 currentUserEmail = res.email;
                 displayUser.textContent = `Logget ind som: ${res.email}`;
                 loginScreen.style.display = 'none';
-                chatContainer.style.display = 'flex';
+                chatContainer.style.display = 'flex'; //optager hele plads, dog med max-width=500
                 // Join standard rum efter login
                 socket.emit('join room', roomSelect.value);
             } else {
@@ -133,14 +177,17 @@
             if (input.value) {
                 // Vi sender rum, besked og brugerens email til serveren
                 socket.emit('chat message', {
+					user: currentUserEmail,
                     room: roomSelect.value,
-                    msg: `${currentUserEmail}: ${input.value}`
+                    //msg: `${currentUserEmail}: ${input.value}`
+					msg: `${input.value}`
                 });
                 input.value = '';
             }
         });
 
         // Hjælpefunktion til UI
+		/*
         function addMessageToUI(text, className = '') {
             const item = document.createElement('li');
             item.textContent = text;
@@ -148,6 +195,21 @@
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
         }
+		*/
+		function addMessageToUI(text, className = '') {
+			const item = document.createElement('li');
+			item.textContent = text;
+			
+			// Hvis beskeden starter med din egen email, giv den klassen 'my-msg'
+			if (text.startsWith(currentUserEmail)) {
+				item.classList.add('my-msg');
+			}
+			
+			if (className) item.classList.add(className);
+			messages.appendChild(item);
+			messages.scrollTop = messages.scrollHeight;
+		}
+
     </script>
 </body>
 </html>
