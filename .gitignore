@@ -1,4 +1,14 @@
-node_modules/
-chat.db
-chat-log.txt
+#Plaintext
+# Logfiler
+*.log
+snowflake.log
+
+# Miljøvariabler (ADGANGSKODER!)
 .env
+
+# Node.js moduler (fylder for meget)
+node_modules/
+
+# OS-specifikke filer
+.DS_Store
+Thumbs.db
