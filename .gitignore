@@ -3,6 +3,9 @@
 *.log
 snowflake.log
 
+#sqlite DB'en
+chat.db
+
 # Miljøvariabler (ADGANGSKODER!)
 .env
 
