@@ -8,6 +8,10 @@ import bcrypt from 'bcrypt';
 import { connection, connectToSnowflake } from './snowflake-config.js';
 const saltRounds = 10; // Hvor kraftig skal krypteringen være? 10 er standard.
 
+// cd C:\Users\bh\Documents\programmering\node.js\chat-projekt 
+// node server.mjs    npm start
+
+
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
@@ -104,12 +108,12 @@ io.on('connection', (socket) => {
   //Ny bruger forbundet, socket.id= rcRpY6D0PNKStgdgAAAD  unikt random tal
 
   // Lyt efter når en bruger vil skifte rum, room er roomSelect.value, efter authenticate ok, så emitter clienten 'join room'
-  socket.on('join room', (room) => {
-	  console.log('room',room);
-	  console.log('join room, socket.id=',socket.id);
+  socket.on('join room', async (room) => {
+	  //console.log('room',room);
+	  //console.log('join room, socket.id=',socket.id);
     // Forlad tidligere rum (undtagen det unikke rum:socket.id )
     socket.rooms.forEach(r => {
-		console.log('r:',r)
+		//console.log('r:',r)
       if(r !== socket.id) socket.leave(r);
     });
 
@@ -119,22 +123,60 @@ io.on('connection', (socket) => {
     // 3. DEBUG LOG: Se hvad der sker lige nu
     // Vi bruger Array.from() for at gøre Set'et læsbart for console.log
     const aktiveRum = Array.from(socket.rooms);
+	/*
     console.log(`-----------------------------------`);
     console.log(`Bruger ID: ${socket.id}`);
     console.log(`Aktive rum:`, aktiveRum);
     console.log(`-----------------------------------`);
+	console.log(`Bruger trådte ind i rummet: ${room}`);
+	*/
+	async function getRoomHistory(roomName) {
+	  const sql = `
+	 SELECT USERNAME as "username", MESSAGE as "message", ROOM as "room", TO_CHAR(SENT_AT, 'YYYY-MM-DD HH24:MI') as "timestamp" from CHAT_MESSAGES  
+	 WHERE room = ? 
+	 ORDER BY sent_at ASC 
+	 LIMIT 100`;
+	  //console.log('sql:',sql);
+	  return new Promise((resolve, reject) => {
+		connection.execute({
+		  sqlText: sql,
+		  binds: [roomName],
+		  complete: (err, stmt, rows) => {
+		
+			if (err) {
+			  console.error('Fejl ved hentning af historik fra Snowflake:', err.message);
+			  reject(err);
+			} else {
+			  //console.log('Første række fra Snowflake:', rows[0]); // Se her i din terminal!
+			  resolve(rows);
+			}
+		  }
+		});
+	  });
+	}
 	
 	// HENT HISTORIK FOR RUMMET: Når brugeren logger på et rum
+	try {
+        // HENT HISTORIK FRA SNOWFLAKE:
+        const history = await getRoomHistory(room);
+        
+        // Send historikken KUN til den bruger, der lige er logget på
+        socket.emit('chat history', history);
+    } catch (err) {
+        console.error("Kunne ikke sende historik til brugeren.");
+    }
+	
+	/*
     db.all("SELECT * FROM messages WHERE room = ? ORDER BY timestamp ASC", [room], (err, rows) => {
       if (err) return console.error(err);
       // Send hele historikken til den nye bruger
       socket.emit('chat history', rows);
     });
-	
-    console.log(`Bruger trådte ind i rummet: ${room}`);
+	*/
+   
     
     // Bekræftelse til brugeren
-    socket.emit('chat message', `Du er nu i rummet: ${room}`); 
+    socket.emit('chat message', `Du er nu i rummet: ${room}`); //bliver vist overskrevet før den vises !?
   });
 
 

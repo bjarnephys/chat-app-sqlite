@@ -7,6 +7,7 @@ En fuldt funktionel realtids chat-applikation bygget med Node.js. Projektet demo
 * **Brugerstyring:** Log ind som eksisterende bruger eller opret en ny profil.
 * **Sikkerhed:** Adgangskoder hashes med `bcrypt` før lagring i databasen.
 * **Persistens:** Beskedhistorik og brugerdata gemmes i en lokal SQLite-database (`chat.db`).
+* **Beskederne gemmes også i en Snowflake database
 * **Chatrum:** Mulighed for at skifte mellem forskellige rum (f.eks. Generelt, Sport, Kodning).
 * **Realtid:** Beskeder sendes og modtages øjeblikkeligt via Socket.io.
 * **Historik:** Når en bruger joiner et rum, hentes de tidligere beskeder automatisk fra databasen.
@@ -15,7 +16,7 @@ En fuldt funktionel realtids chat-applikation bygget med Node.js. Projektet demo
 
 * **Backend:** Node.js, Express
 * **Realtid:** Socket.io
-* **Database:** SQLite3
+* **Database:** SQLite3, Snowflake database
 * **Kryptering:** Bcrypt
 * **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
 
@@ -44,6 +45,7 @@ Følg disse trin for at få projektet op at køre lokalt:
 ## 📂 Projektstruktur
 
 * `server.mjs` - Server-logik, database-forbindelse og Socket.io events.
+* `snowflake-config.js`  -opkobling til Snowflake
 * `index.html` - Client-side UI og WebSocket logik.
 * `package.json` - Projektkonfiguration og afhængigheder.
 * `.gitignore` - Fortæller Git, hvilke filer der skal ignoreres (f.eks. `node_modules` og `chat.db`).
