@@ -7,6 +7,7 @@ import sqlite3 from 'sqlite3';
 import bcrypt from 'bcrypt';
 import { connection, connectToSnowflake } from './snowflake-config.js';
 const saltRounds = 10; // Hvor kraftig skal krypteringen være? 10 er standard.
+import { rateLimit } from 'express-rate-limit';
 
 // cd C:\Users\bh\Documents\programmering\node.js\chat-projekt 
 // node server.mjs    npm start
@@ -29,6 +30,10 @@ async function MakeSnowflakeConnection() {
     }
 }
 MakeSnowflakeConnection();
+
+// Øverst i din server.mjs
+const creationAttempts = new Map(); // Gemmer IP -> tidsstempel
+
 
 // Brug porten fra systemet (Render), eller 3000 hvis vi er på localhost
 const PORT = process.env.PORT || 3000;
@@ -68,7 +73,24 @@ io.on('connection', (socket) => {
   socket.on('authenticate', async (data) => {
     const { email, password, isNewUser } = data;
 
-    if (isNewUser) {
+	if (isNewUser) {
+		const ip = socket.handshake.address; // Hent brugerens IP
+		const lastAttempt = creationAttempts.get(ip);
+		const now = Date.now();
+		// Hvis der er gået mindre end 60 sekunder
+        if (lastAttempt && (now - lastAttempt) < 60000) {
+            return socket.emit('auth response', { 
+                success: false, 
+                message: 'For security reasons, max 1 new user can be created per minute from an IP. Waite a minute!' 
+            });
+        }
+		
+		
+		// Opdater tidsstempel for denne IP
+        creationAttempts.set(ip, now);
+
+		//console.log( 'creationAttempts ', creationAttempts );
+    
         // --- REGISTRERING ---
         // 1. Hash adgangskoden før vi gemmer den
         const hashedPassword = await bcrypt.hash(password, saltRounds);
