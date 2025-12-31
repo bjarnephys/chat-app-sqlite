@@ -75,16 +75,16 @@ body {
 <body>
 
     <div id="login-screen">
-        <h2>Velkommen</h2>
+        <h2>Velcome</h2>
         <input type="email" id="email-input" placeholder="E-mail" required>
         <input type="password" id="password-input" placeholder="Adgangskode" required>
         
         <div style="text-align: left; font-size: 14px; margin: 10px 0;">
-            <input type="checkbox" id="new-user-check"> Jeg er ny bruger
+            <input type="checkbox" id="new-user-check"> I am a new user
         </div>
         
-        <button id="login-btn">Log ind / Opret</button>
-        <p id="error-msg"></p>
+        <button id="login-btn">Log in / Create a User</button>
+        <p id="userMsg"></p>
     </div>
 
     <div id="chat-container">
@@ -116,7 +116,7 @@ body {
         const emailInput = document.getElementById('email-input');
         const passInput = document.getElementById('password-input');
         const newUserCheck = document.getElementById('new-user-check');
-        const errorMsg = document.getElementById('error-msg');
+        const userMsg = document.getElementById('userMsg');
         
         const roomSelect = document.getElementById('room-select');
         const messages = document.getElementById('messages');
@@ -139,21 +139,34 @@ body {
 
         socket.on('auth response', (res) => {
             if (res.success) {
+                // 1. Vis succes-beskeden (Gør den grøn!)
+                userMsg.style.color = "green";
+                userMsg.innerHTML = res.message || "Success!";
+
+                // 2. Hvis det er en ny bruger, så giv dem tid til at se det
+                if (res.message && res.message.includes('created')) {
+                    // Vi stopper her, så de kan læse "User created!"
+                    // De skal nu trykke på "Login" knappen for at komme ind
+                    return; 
+                }
+
+                // 3. Hvis det er almindeligt login, så skift til chatten med det samme
                 currentUserEmail = res.email;
-                displayUser.textContent = `Logget ind som: ${res.email}`;
+                displayUser.textContent = `Logged in as: ${res.email}`;
                 loginScreen.style.display = 'none';
-                chatContainer.style.display = 'flex'; //optager hele plads, dog med max-width=500
-                // Join standard rum efter login
+                chatContainer.style.display = 'flex';
                 socket.emit('join room', roomSelect.value);
+
             } else {
-                errorMsg.textContent = res.message;
+                // Fejlbesked (Gør den rød!)
+                userMsg.style.color = "red";
+                userMsg.innerHTML = res.message;
             }
         });
 
         // --- RUM LOGIK ---
         roomSelect.addEventListener('change', () => {
-			
-            socket.emit('join room', roomSelect.value);
+			socket.emit('join room', roomSelect.value);
         });
 
         // --- MODTAG DATA ---
