@@ -1,4 +1,4 @@
-# SQLite & Socket.io Chat App
+# Snowflake & Socket.io Chat App
 
 En fuldt funktionel realtids chat-applikation bygget med Node.js. Projektet demonstrerer brugen af WebSockets til kommunikation, Snowflake til datalagring og sikker brugerautentificering med bcrypt.
 
