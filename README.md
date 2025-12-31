@@ -1,12 +1,12 @@
 # SQLite & Socket.io Chat App
 
-En fuldt funktionel realtids chat-applikation bygget med Node.js. Projektet demonstrerer brugen af WebSockets til kommunikation, SQLite til datalagring og sikker brugerautentificering med bcrypt.
+En fuldt funktionel realtids chat-applikation bygget med Node.js. Projektet demonstrerer brugen af WebSockets til kommunikation, Snowflake til datalagring og sikker brugerautentificering med bcrypt.
 
 ## ✨ Funktioner
 
 * **Brugerstyring:** Log ind som eksisterende bruger eller opret en ny profil.
 * **Sikkerhed:** Adgangskoder hashes med `bcrypt` før lagring i databasen.
-* **Persistens:** Beskedhistorik og brugerdata gemmes i en lokal SQLite-database (`chat.db`).
+* **Persistens:** Beskedhistorik og brugerdata gemmes i en remote Snowflake database.
 * **Beskederne gemmes også i en Snowflake database
 * **Chatrum:** Mulighed for at skifte mellem forskellige rum (f.eks. Generelt, Sport, Kodning).
 * **Realtid:** Beskeder sendes og modtages øjeblikkeligt via Socket.io.
@@ -16,7 +16,7 @@ En fuldt funktionel realtids chat-applikation bygget med Node.js. Projektet demo
 
 * **Backend:** Node.js, Express
 * **Realtid:** Socket.io
-* **Database:** SQLite3, Snowflake database
+* **Database:** Snowflake database
 * **Kryptering:** Bcrypt
 * **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
 
@@ -48,10 +48,10 @@ Følg disse trin for at få projektet op at køre lokalt:
 * `snowflake-config.js`  -opkobling til Snowflake
 * `index.html` - Client-side UI og WebSocket logik.
 * `package.json` - Projektkonfiguration og afhængigheder.
-* `.gitignore` - Fortæller Git, hvilke filer der skal ignoreres (f.eks. `node_modules` og `chat.db`).
+* `.gitignore` - Fortæller Git, hvilke filer der skal ignoreres (f.eks. `node_modules` og password filen `.env`).
 
 ## 🔒 Sikkerhedsbemærkning
-Projektet bruger `bcrypt` til hashing af adgangskoder. Dette sikrer, at adgangskoder aldrig gemmes i klar tekst i databasen. Selvom `chat.db` filen skulle gå tabt, forbliver brugernes faktiske koder beskyttede.
+Projektet bruger `bcrypt` til hashing af adgangskoder. Dette sikrer, at adgangskoder aldrig gemmes i klar tekst i databasen. 
 
 ---
 *Udviklet som et læringsprojekt i Node.js og realtids-kommunikation.*

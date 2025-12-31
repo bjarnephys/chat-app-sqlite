@@ -26,7 +26,7 @@ async function MakeSnowflakeConnection() {
 }
 MakeSnowflakeConnection();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; //Render skal have lov selv at bestemme
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -114,7 +114,7 @@ io.on('connection', (socket) => {
                     const user = rows[0];
                     const dbPassword = user.PASSWORD || user.password;
                     const match = await bcrypt.compare(password, dbPassword);
-                    console.log('match:', match)
+                    //console.log('match:', match)
                     if (match) {
                         socket.emit('auth response', { success: true, email: email, message: 'User logged in.' });
                     } else {
